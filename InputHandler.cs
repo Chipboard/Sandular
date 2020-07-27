@@ -1,6 +1,7 @@
 ﻿using SFML.System;
 using SFML.Window;
 using System;
+using System.Collections.Generic;
 
 namespace Sandular
 {
@@ -8,8 +9,10 @@ namespace Sandular
     {
         public static Vector2f MousePosition;
         public static int Type = 0;
-        public static float RangeX=5;
-        public static float RangeY=5;
+        public static float RangeX = 5;
+        public static float RangeY = 5;
+
+        public static Dictionary<Keyboard.Key, bool> KeyValues = new Dictionary<Keyboard.Key, bool>();
 
         public static void Tick()
         {
@@ -33,10 +36,10 @@ namespace Sandular
 
             if (Mouse.IsButtonPressed(Mouse.Button.Right))
             {
-                int MinX = (int)InputHandler.MousePosition.X - (int)InputHandler.RangeX + 1;
-                int MinY = (int)InputHandler.MousePosition.Y - (int)InputHandler.RangeY + 1;
-                int MaxX = (int)InputHandler.MousePosition.X + (int)InputHandler.RangeX;
-                int MaxY = (int)InputHandler.MousePosition.Y + (int)InputHandler.RangeY;
+                int MinX = (int)MousePosition.X - (int)RangeX + 1;
+                int MinY = (int)MousePosition.Y - (int)RangeY + 1;
+                int MaxX = (int)MousePosition.X + (int)RangeX;
+                int MaxY = (int)MousePosition.Y + (int)RangeY;
 
                 for (int CX = MinX; CX < MaxX; CX++)
                 {
@@ -46,21 +49,70 @@ namespace Sandular
                     }
                 }
             }
+        }
+
+        public static void KeyPressed(Keyboard.Key Key)
+        {
+            if (Key == Keyboard.Key.E)
+                Type++;
+
+            if (Key == Keyboard.Key.Q)
+                Type--;
+
+            /*if (Key == Keyboard.Key.T)
+                Renderer.RoundPlot = !Renderer.RoundPlot;
+
+            if (Key == Keyboard.Key.R)
+                Renderer.RawPlot = !Renderer.RawPlot;*/
+
+            if (Key == Keyboard.Key.G)
+                Program.ShowGrid = !Program.ShowGrid;
+
+            if(Key == Keyboard.Key.Space)
+                Program.Paused = !Program.Paused;
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.LControl) && Program.ShowGrid)
             {
-                if (Keyboard.IsKeyPressed(Keyboard.Key.Up))
+                if (Key == Keyboard.Key.Up)
                 {
-                    if(Solver.GridSize<=40)
-                    Solver.GridSize+=5;
+                    if (Solver.GridSize <= 40)
+                        Solver.GridSize += 5;
                 }
 
-                if (Keyboard.IsKeyPressed(Keyboard.Key.Down))
+                if (Key == Keyboard.Key.Down)
                 {
                     if (Solver.GridSize >= 10)
-                        Solver.GridSize-=5;
+                        Solver.GridSize -= 5;
                 }
             }
+
+            if (Type > Resources.PowderTypes.Count - 1)
+            {
+                Type = 0;
+            }
+            else if (Type < 0)
+            {
+                Type = Resources.PowderTypes.Count - 1;
+            }
+        }
+
+        public static void OnKeyPressed(object sender, EventArgs e)
+        {
+            KeyEventArgs KeyArgs = (KeyEventArgs)e;
+
+            bool KeyValue;
+            if(!KeyValues.TryGetValue(KeyArgs.Code, out KeyValue))
+            {
+                KeyValues.Add(KeyArgs.Code, true);
+                KeyPressed(KeyArgs.Code);
+            }
+        }
+
+        public static void OnKeyReleased(object sender, EventArgs e)
+        {
+            KeyEventArgs KeyArgs = (KeyEventArgs)e;
+
+            KeyValues.Remove(KeyArgs.Code);
         }
 
         public static void OnMouseScroll(object sender, EventArgs e)
@@ -69,7 +121,10 @@ namespace Sandular
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.LControl))
             {
-                RangeX += MouseEvent.Delta * 0.001f;
+                if (MouseEvent.Delta > 0)
+                    RangeX += 0.001f;
+                else
+                    RangeX -= 0.001f;
 
                 if (RangeX < 1)
                     RangeX = 1;
@@ -83,7 +138,10 @@ namespace Sandular
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.LShift))
             {
-                RangeY += MouseEvent.Delta * 0.001f;
+                if(MouseEvent.Delta>0)
+                    RangeY += 0.001f;
+                else
+                    RangeY -= 0.001f;
 
                 if (RangeY < 1)
                     RangeY = 1;

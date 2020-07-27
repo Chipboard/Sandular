@@ -18,40 +18,52 @@ namespace Sandular
         public static Text FPSText;
         public static Font Font;
 
+        public static bool Paused;
+
         static void Main(string[] args)
         {
             Initialize();
 
             while (ProgramWindow.IsOpen)
             {
-                //Dispatch the events before checking them
-                ProgramWindow.DispatchEvents();
-
-                //Dispatch event to OnClose() function when window close is pressed
-                ProgramWindow.Closed += (sender, e) => { OnClose(); };
-
-                //Send scroll wheel to input handler
-                ProgramWindow.MouseWheelMoved += (sender, e) => { InputHandler.OnMouseScroll(sender, e); };
-
-                //Get the input
-                InputHandler.Tick();
-
-                //Tick the solver
-                Solver.Tick();
-
-                //Render a frame
-                Renderer.RenderTick();
-
-                if (ShowFPS)
+                if (ProgramWindow.HasFocus())
                 {
-                    long Micro = FPSClock.Restart().AsMicroseconds();
-                    if (Micro > 0)
+                    //Dispatch the events before checking them
+                    ProgramWindow.DispatchEvents();
+
+                    //Dispatch event to OnClose() function when window close is pressed
+                    ProgramWindow.Closed += (sender, e) => { OnClose(); };
+
+                    //Send scroll wheel to input handler
+                    ProgramWindow.MouseWheelMoved += (sender, e) => { InputHandler.OnMouseScroll(sender, e); };
+
+                    //Send keyboard input to input handler
+                    ProgramWindow.KeyPressed += (sender, e) => { InputHandler.OnKeyPressed(sender, e); };
+                    ProgramWindow.KeyReleased += (sender, e) => { InputHandler.OnKeyReleased(sender, e); };
+
+                    //Get the input
+                    InputHandler.Tick();
+
+                    if (!Paused)
                     {
-                        FPS = 1000000 / Micro;
+                        //Tick the solver
+                        Solver.Tick();
                     }
-                    else
+
+                    //Render a frame
+                    Renderer.RenderTick();
+
+                    if (ShowFPS)
                     {
-                        FPS = float.PositiveInfinity;
+                        long Micro = FPSClock.Restart().AsMicroseconds();
+                        if (Micro > 0)
+                        {
+                            FPS = 1000000 / Micro;
+                        }
+                        else
+                        {
+                            FPS = float.PositiveInfinity;
+                        }
                     }
                 }
             }
@@ -85,11 +97,12 @@ namespace Sandular
         static void InitializeWindow()
         {
             Resolution = new Vector2u(250, 250);
-            VideoMode = new VideoMode(Resolution.X, Resolution.Y, 32);
+            VideoMode = new VideoMode(Resolution.X, Resolution.Y, 24);
             ProgramWindow = new RenderWindow(VideoMode, "Sandular", Styles.Close);
             ProgramWindow.Size = Resolution * 2;
             //ProgramWindow.SetVerticalSyncEnabled(true);
             ProgramWindow.SetFramerateLimit(120);
+            ProgramWindow.SetKeyRepeatEnabled(false);
         }
 
         static void SetBackground()

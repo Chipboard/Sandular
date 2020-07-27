@@ -56,52 +56,105 @@ namespace Sandular
         {
             for (int i = 0; i < Particles.Count; i++)
             {
-                if ((uint)Particles[i].PX >= Program.Resolution.X - 1)
-                    if (VoidMode == true)
-                    {
-                        Particles.RemoveAt(i);
-                        continue;
-                    }
-                    else
-                    {
-                        Particles[i].PX = 1;
-                    }
-
-                if ((uint)Particles[i].PY >= Program.Resolution.Y - 1)
-                    if (VoidMode == true)
-                    {
-                        Particles.RemoveAt(i);
-                        continue;
-                    }
-                    else
-                    {
-                        Particles[i].PY = 0;
-                    }
-
-                if ((uint)Particles[i].PX < 0)
-                    if (VoidMode == true)
-                    {
-                        Particles.RemoveAt(i);
-                        continue;
-                    }
-                    else
-                    {
-                        Particles[i].PX = Program.Resolution.X - 1;
-                    }
-
-                if ((uint)Particles[i].PY < 0)
-                    if (VoidMode == true)
-                    {
-                        Particles.RemoveAt(i);
-                        continue;
-                    }
-                    else
-                    {
-                        Particles[i].PY = Program.Resolution.Y - 1;
-                    }
+                if (!CheckParticleBounds(i))
+                    continue;
 
                 AssertParticle(i);
             }
+        }
+
+        public static bool CheckParticleBounds(int i)
+        {
+            if ((uint)Particles[i].PX >= Program.Resolution.X - 1)
+                if (VoidMode == true)
+                {
+                    Particles.RemoveAt(i);
+                    return false;
+                }
+                else
+                {
+                    Particles[i].PX = 1;
+                }
+
+            if ((uint)Particles[i].PY >= Program.Resolution.Y - 1)
+                if (VoidMode == true)
+                {
+                    Particles.RemoveAt(i);
+                    return false;
+                }
+                else
+                {
+                    Particles[i].PY = 0;
+                }
+
+            if ((uint)Particles[i].PX < 0)
+                if (VoidMode == true)
+                {
+                    Particles.RemoveAt(i);
+                    return false;
+                }
+                else
+                {
+                    Particles[i].PX = Program.Resolution.X - 1;
+                }
+
+            if ((uint)Particles[i].PY < 0)
+                if (VoidMode == true)
+                {
+                    Particles.RemoveAt(i);
+                    return false;
+                }
+                else
+                {
+                    Particles[i].PY = Program.Resolution.Y - 1;
+                }
+
+            return true;
+        }
+
+        public static bool CheckParticleBounds(PowderPoint P)
+        {
+            if ((uint)P.PX >= Program.Resolution.X - 1)
+                if (VoidMode == true)
+                {
+                    return false;
+                }
+                else
+                {
+                    P.PX = 1;
+                }
+
+            if ((uint)P.PY >= Program.Resolution.Y - 1)
+                if (VoidMode == true)
+                {
+                    return false;
+                }
+                else
+                {
+                    P.PY = 0;
+                }
+
+            if ((uint)P.PX < 0)
+                if (VoidMode == true)
+                {
+                    return false;
+                }
+                else
+                {
+                    P.PX = Program.Resolution.X - 1;
+                }
+
+            if ((uint)P.PY < 0)
+                if (VoidMode == true)
+                {
+                    return false;
+                }
+                else
+                {
+                    P.PY = Program.Resolution.Y - 1;
+                }
+
+            return true;
         }
 
         public static void SimulateGrids()
@@ -120,7 +173,7 @@ namespace Sandular
                         Particles[i].VY *= 1 / (1 + Resources.PowderTypes[(int)Particles[i].Type].Drag);
 
                         //Get neighbor data
-                        int[] Neighbors = GetNeighbors((uint)Math.Round(Particles[i].PX), (uint)Math.Round(Particles[i].PY));
+                        int[] Neighbors = GetNeighbors((uint)Particles[i].PX, (uint)Particles[i].PY);
 
                         //Liquid movement
                         if (Resources.PowderTypes[(int)Particles[i].Type].Liquid)
@@ -428,7 +481,7 @@ namespace Sandular
 
         public static void ClearGridParticles()
         {
-            foreach (KeyValuePair<Vector2u, GridPoint> Entry in Solver.GridPoints)
+            foreach (KeyValuePair<Vector2u, GridPoint> Entry in GridPoints)
             {
                 Entry.Value.Particles.Clear();
             }
@@ -437,7 +490,7 @@ namespace Sandular
         public static void AssertParticle(int i)
         {
             Vector2u CurrentPoint = GetGridPoint(Particles[i].PX, Particles[i].PY);
-            Vector2u ParticlePos = new Vector2u((uint)Math.Round(Particles[i].PX), (uint)Math.Round(Particles[i].PY));
+            Vector2u ParticlePos = new Vector2u((uint)Particles[i].PX, (uint)Particles[i].PY);
             if (!GridPoints.ContainsKey(CurrentPoint))
             {
                 GridPoint NewGrid = new GridPoint();
@@ -487,12 +540,18 @@ namespace Sandular
         {
             if (GetParticleAtPos((Vector2u)Position) ==  -1)
             {
-                Particles.Add(new PowderPoint()
+                PowderPoint New = new PowderPoint()
                 {
                     PX = (uint)Position.X,
                     PY = (uint)Position.Y,
-                    Type = (uint)Type
-                });
+                    Type = (uint)Type,
+                    ColVar = (byte)RDM.Next(0, Resources.PowderTypes[Type].MaxColVar + 1)
+                };
+                if (CheckParticleBounds(New))
+                {
+                    Particles.Add(New);
+                    AssertParticle(Particles.Count - 1);
+                }
             }
         }
     }

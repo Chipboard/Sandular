@@ -11,25 +11,28 @@ namespace Sandular
             PowderTypes.Add(new PowderType()
             {
                 Name = "Sand",
-                Color = Color.Yellow,
+                Color = new Color(226,226,44,255),
                 Drag = 0.05f,
-                Mass = 0.055f
+                Mass = 0.055f,
+                MaxColVar = 85
             });
 
-            PowderTypes.Add(new PowderType()
+            /*PowderTypes.Add(new PowderType()
             {
                 Name = "Water",
-                Color = Color.Blue,
+                Color = new Color(59, 140, 220, 200),
                 Drag = 0.0001f,
                 Liquid = true,
-                Mass = 0.036126842f
-            });
+                Mass = 0.036126842f,
+                MaxColVar = 75
+            });*/
 
             PowderTypes.Add(new PowderType()
             {
                 Name = "Wall",
                 Color = new Color(101, 102, 103, 255),
-                Drag = -1
+                Drag = -1,
+                MaxColVar = 45
             });
         }
     }
@@ -43,6 +46,8 @@ namespace Sandular
         public float VY;
 
         public uint Type;
+
+        public byte ColVar;
     }
 
     class PowderType
@@ -52,5 +57,6 @@ namespace Sandular
         public float Drag;
         public bool Liquid;
         public float Mass;
+        public byte MaxColVar;
     }
 }

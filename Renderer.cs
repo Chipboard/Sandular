@@ -12,6 +12,9 @@ namespace Sandular
         public static RectangleShape GridDraw;
         public static Color CursorColor;
 
+        public static bool RawPlot = true;
+        public static bool RoundPlot = false;
+
         public static void RenderTick()
         {
             Program.ProgramWindow.Clear(Color.Black);
@@ -22,7 +25,19 @@ namespace Sandular
             //Render particles
             for (int i = 0; i < Solver.Particles.Count; i++)
             {
-                PlotPoint((uint)Math.Round(Solver.Particles[i].PX), (uint)Math.Round(Solver.Particles[i].PY), Resources.PowderTypes[(int)Solver.Particles[i].Type].Color);
+                if (RoundPlot)
+                {
+                    if (RawPlot)
+                        PlotPointRaw((uint)Math.Round(Solver.Particles[i].PX), (uint)Math.Round(Solver.Particles[i].PY), VariateColor(Resources.PowderTypes[(int)Solver.Particles[i].Type].Color, Solver.Particles[i].ColVar));
+                    else
+                        PlotPoint((uint)Math.Round(Solver.Particles[i].PX), (uint)Math.Round(Solver.Particles[i].PY), VariateColor(Resources.PowderTypes[(int)Solver.Particles[i].Type].Color, Solver.Particles[i].ColVar));
+                } else
+                {
+                    if (RawPlot)
+                        PlotPointRaw((uint)Solver.Particles[i].PX, (uint)Solver.Particles[i].PY, VariateColor(Resources.PowderTypes[(int)Solver.Particles[i].Type].Color, Solver.Particles[i].ColVar));
+                    else
+                        PlotPoint((uint)Solver.Particles[i].PX, (uint)Solver.Particles[i].PY, VariateColor(Resources.PowderTypes[(int)Solver.Particles[i].Type].Color, Solver.Particles[i].ColVar));
+                }
             }
 
             //Render cursor
@@ -51,7 +66,7 @@ namespace Sandular
                     Program.FPSText = new Text(Program.FPS.ToString(), Program.Font, 10);
                 }
 
-                Program.FPSText.DisplayedString = Solver.Particles.Count.ToString();
+                Program.FPSText.DisplayedString = Program.FPS.ToString();
                 Program.ProgramWindow.Draw(Program.FPSText);
             }
 
@@ -68,6 +83,12 @@ namespace Sandular
             Program.ProgramWindow.Display();
         }
 
+        public static Color VariateColor(Color Col, byte Var)
+        {
+            byte Rem = (byte)(Var * 0.5f);
+            return new Color((byte)(Col.R - Rem), (byte)(Col.G - Rem), (byte)(Col.B - Rem), Col.A);
+        }
+
         public static void PlotPoint(uint X, uint Y, Color Col)
         {
             if (X > 0 && X <= BackgroundImage.Size.X-1)
@@ -77,6 +98,11 @@ namespace Sandular
                     BackgroundImage.SetPixel(X, Y, Col);
                 }
             }
+        }
+
+        public static void PlotPointRaw(uint X, uint Y, Color Col)
+        {
+            BackgroundImage.SetPixel(X, Y, Col);
         }
     }
 }
