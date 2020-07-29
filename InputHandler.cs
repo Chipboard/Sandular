@@ -2,6 +2,7 @@
 using SFML.Window;
 using System;
 using System.Collections.Generic;
+using SFML.Graphics;
 
 namespace Sandular
 {
@@ -53,6 +54,9 @@ namespace Sandular
 
         public static void KeyPressed(Keyboard.Key Key)
         {
+            if (Key == Keyboard.Key.F)
+                Program.ShowFPS = !Program.ShowFPS;
+
             if (Key == Keyboard.Key.E)
                 Type++;
 
@@ -77,12 +81,22 @@ namespace Sandular
                 {
                     if (Solver.GridSize <= 40)
                         Solver.GridSize += 5;
+
+                    Solver.HalfGrid = Solver.GridSize / 2;
+
+                    FloatRect Rect = Renderer.GridDraw.GetLocalBounds();
+                    Renderer.GridDraw.Origin = new Vector2f(Rect.Width / 2, Rect.Height / 2);
                 }
 
                 if (Key == Keyboard.Key.Down)
                 {
                     if (Solver.GridSize >= 10)
                         Solver.GridSize -= 5;
+
+                    Solver.HalfGrid = Solver.GridSize / 2;
+
+                    FloatRect Rect = Renderer.GridDraw.GetLocalBounds();
+                    Renderer.GridDraw.Origin = new Vector2f(Rect.Width / 2, Rect.Height / 2);
                 }
             }
 

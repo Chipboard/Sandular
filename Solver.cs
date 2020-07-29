@@ -12,14 +12,16 @@ namespace Sandular
         public static List<PowderPoint> RemoveFromParticles = new List<PowderPoint>();
         public static bool VoidMode = true;
         public static float Gravity = 9.8f;
-        public static uint GridSize = 15;
+        public static Vector2f GravityPoint;
+        public static uint GridSize = 1005;
+        public static uint HalfGrid = GridSize / 2;
         public static Random RDM;
 
         public static void Tick()
         {
             SimulateGrids();
-            RemoveClearedParticles();
             ClearGridParticles();
+            RemoveClearedParticles();
             AssertAndCheck();
             ClearEmptyGrids();
 
@@ -84,10 +86,10 @@ namespace Sandular
                 }
                 else
                 {
-                    Particles[i].PY = 0;
+                    Particles[i].PY = 1;
                 }
 
-            if ((uint)Particles[i].PX < 0)
+            if ((uint)Particles[i].PX < 1)
                 if (VoidMode == true)
                 {
                     Particles.RemoveAt(i);
@@ -98,7 +100,7 @@ namespace Sandular
                     Particles[i].PX = Program.Resolution.X - 1;
                 }
 
-            if ((uint)Particles[i].PY < 0)
+            if ((uint)Particles[i].PY < 1)
                 if (VoidMode == true)
                 {
                     Particles.RemoveAt(i);
@@ -131,10 +133,10 @@ namespace Sandular
                 }
                 else
                 {
-                    P.PY = 0;
+                    P.PY = 1;
                 }
 
-            if ((uint)P.PX < 0)
+            if ((uint)P.PX < 1)
                 if (VoidMode == true)
                 {
                     return false;
@@ -144,7 +146,7 @@ namespace Sandular
                     P.PX = Program.Resolution.X - 1;
                 }
 
-            if ((uint)P.PY < 0)
+            if ((uint)P.PY < 1)
                 if (VoidMode == true)
                 {
                     return false;
@@ -163,74 +165,227 @@ namespace Sandular
             {
                 foreach (int i in Entry.Value.Particles.Values)
                 {
-                    if (Resources.PowderTypes[(int)Particles[i].Type].Drag > 0)
+                    PowderType Current = Resources.PowderTypes[(int)Particles[i].Type];
+                    if (Current.Drag > 0)
                     {
                         //Gravitational pull
                         Particles[i].VY += Gravity * 0.01f;
+                        //Particles[i].VX -= (Particles[i].PX - GravityPoint.X) * (Gravity*0.0001f);
+                        //Particles[i].VY -= (Particles[i].PY - GravityPoint.Y) * (Gravity*0.0001f);
 
                         //Drag implementation
-                        Particles[i].VX *= 1 / (1 + Resources.PowderTypes[(int)Particles[i].Type].Drag);
-                        Particles[i].VY *= 1 / (1 + Resources.PowderTypes[(int)Particles[i].Type].Drag);
-
-                        //Get neighbor data
-                        int[] Neighbors = GetNeighbors((uint)Particles[i].PX, (uint)Particles[i].PY);
+                        Particles[i].VX *= 1 / (1 + Current.Drag);
+                        Particles[i].VY *= 1 / (1 + Current.Drag);
 
                         //Liquid movement
-                        if (Resources.PowderTypes[(int)Particles[i].Type].Liquid)
+                        if (Current.Liquid)
                         {
                             Particles[i].VX += RDM.Next(-1, 2)*0.1f;
                             Particles[i].VY += RDM.Next(-1,2)*0.1f;
                         }
 
+                        //Get neighbor data
+                        int[] Neighbors = GetNeighbors((uint)Particles[i].PX, (uint)Particles[i].PY);
+
+                        if (Current.Pours)
+                        {
+                            //UP neighbor
+                            if (Neighbors[0] != -1)
+                            {
+                                //Force Transferral
+                                if (Particles[i].VY < 0 && Particles[Neighbors[0]].VY > Particles[i].VY)
+                                {
+                                    /*if(Resources.PowderTypes[(int)Particles[Neighbors[1]].Type].Drag > 0 || Resources.PowderTypes[(int)Particles[i].Type].Mass > Resources.PowderTypes[(int)Particles[Neighbors[0]].Type].Mass)
+                                    {
+                                        float Old = Particles[0].PY;
+                                        Particles[i].PY = Particles[Neighbors[0]].PY;
+                                        Particles[Neighbors[0]].PY = Old;
+                                        continue;
+                                    }*/
+
+                                    bool RSide = false;
+                                    bool LSide = false;
+
+                                    //UP LEFT slide check
+                                    if (Neighbors[4] == -1)
+                                        LSide = true;
+
+                                    //UP RIGHT slide check
+                                    if (Neighbors[5] == -1)
+                                        RSide = true;
+
+                                    if (RSide && LSide)
+                                    {
+                                        switch (RDM.Next(0, 2))
+                                        {
+                                            case 0:
+                                                Particles[i].VX += 0.1f;
+                                                break;
+                                            case 1:
+                                                Particles[i].VX -= 0.1f;
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (RSide)
+                                        {
+                                            Particles[i].VX += 0.1f;
+                                        }
+
+                                        if (LSide)
+                                        {
+                                            Particles[i].VX -= 0.1f;
+                                        }
+                                    }
+                                }
+                            }
+
+                            //DOWN neighbor
+                            if (Neighbors[1] != -1)
+                            {
+                                //Force Transferral
+                                if (Particles[i].VY > 0 && Particles[Neighbors[1]].VY < Particles[i].VY)
+                                {
+                                    bool RSide = false;
+                                    bool LSide = false;
+
+                                    //DOWN LEFT slide check
+                                    if (Neighbors[6] == -1)
+                                        LSide = true;
+
+                                    //DOWN RIGHT slide check
+                                    if (Neighbors[7] == -1)
+                                        RSide = true;
+
+                                    if (RSide && LSide)
+                                    {
+                                        switch (RDM.Next(0, 2))
+                                        {
+                                            case 0:
+                                                Particles[i].VX += 0.1f;
+                                                break;
+                                            case 1:
+                                                Particles[i].VX -= 0.1f;
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (RSide)
+                                        {
+                                            Particles[i].VX += 0.1f;
+                                        }
+
+                                        if (LSide)
+                                        {
+                                            Particles[i].VX -= 0.1f;
+                                        }
+                                    }
+                                }
+                            }
+
+                            //RIGHT neighbor
+                            if (Neighbors[3] != -1)
+                            {
+                                //Force Transferral
+                                if (Particles[i].VX > 0 && Particles[Neighbors[3]].VX < Particles[i].VX)
+                                {
+                                    bool USide = false;
+                                    bool DSide = false;
+
+                                    //UP slide check
+                                    if (Neighbors[5] == -1)
+                                        USide = true;
+
+                                    //DOWN slide check
+                                    if (Neighbors[7] == -1)
+                                        DSide = true;
+
+                                    if (DSide && USide)
+                                    {
+                                        switch (RDM.Next(0, 2))
+                                        {
+                                            case 0:
+                                                Particles[i].VY += 0.1f;
+                                                break;
+                                            case 1:
+                                                Particles[i].VY -= 0.1f;
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (DSide)
+                                        {
+                                            Particles[i].VY += 0.1f;
+                                        }
+
+                                        if (USide)
+                                        {
+                                            Particles[i].VY -= 0.1f;
+                                        }
+                                    }
+                                }
+                            }
+
+                            //LEFT neighbor
+                            if (Neighbors[2] != -1)
+                            {
+                                //Force Transferral
+                                if (Particles[i].VX < 0 && Particles[Neighbors[2]].VX > Particles[i].VX)
+                                {
+                                    bool USide = false;
+                                    bool DSide = false;
+
+                                    //UP slide check
+                                    if (Neighbors[4] == -1)
+                                        USide = true;
+
+                                    //DOWN slide check
+                                    if (Neighbors[6] == -1)
+                                        DSide = true;
+
+                                    if (DSide && USide)
+                                    {
+                                        switch (RDM.Next(0, 2))
+                                        {
+                                            case 0:
+                                                Particles[i].VY += 0.1f;
+                                                break;
+                                            case 1:
+                                                Particles[i].VY -= 0.1f;
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (DSide)
+                                        {
+                                            Particles[i].VY += 0.1f;
+                                        }
+
+                                        if (USide)
+                                        {
+                                            Particles[i].VY -= 0.1f;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         //UP neighbor
                         if (Neighbors[0] != -1)
                         {
                             //Force Transferral
                             if (Particles[i].VY < 0 && Particles[Neighbors[0]].VY > Particles[i].VY)
                             {
-                                /*if(Resources.PowderTypes[(int)Particles[Neighbors[1]].Type].Drag > 0 || Resources.PowderTypes[(int)Particles[i].Type].Mass > Resources.PowderTypes[(int)Particles[Neighbors[0]].Type].Mass)
-                                {
-                                    float Old = Particles[0].PY;
-                                    Particles[i].PY = Particles[Neighbors[0]].PY;
-                                    Particles[Neighbors[0]].PY = Old;
-                                    continue;
-                                }*/
-
-                                bool RSide = false;
-                                bool LSide = false;
-
-                                //UP LEFT slide check
-                                if (Neighbors[4] == -1)
-                                    LSide = true;
-
-                                //UP RIGHT slide check
-                                if (Neighbors[5] == -1)
-                                    RSide = true;
-
-                                if (RSide && LSide)
-                                {
-                                    switch (RDM.Next(0, 2))
-                                    {
-                                        case 0:
-                                            Particles[i].VX += 0.1f;
-                                            break;
-                                        case 1:
-                                            Particles[i].VX -= 0.1f;
-                                            break;
-                                    }
-                                }
+                                if (Current.Bouncy)
+                                    Particles[i].VY = -Particles[i].VY * 1 / (1 + Current.Drag);
                                 else
-                                {
-                                    if (RSide)
-                                    {
-                                        Particles[i].VX += 0.1f;
-                                    }
+                                    Particles[i].VY = Particles[Neighbors[0]].VY;
 
-                                    if (LSide)
-                                    {
-                                        Particles[i].VX -= 0.1f;
-                                    }
-                                }
+                                Particles[i].PY = Particles[Neighbors[0]].PY + 1;
                             }
                         }
 
@@ -240,41 +395,12 @@ namespace Sandular
                             //Force Transferral
                             if (Particles[i].VY > 0 && Particles[Neighbors[1]].VY < Particles[i].VY)
                             {
-                                bool RSide = false;
-                                bool LSide = false;
-
-                                //DOWN LEFT slide check
-                                if (Neighbors[6] == -1)
-                                    LSide = true;
-
-                                //DOWN RIGHT slide check
-                                if (Neighbors[7] == -1)
-                                    RSide = true;
-
-                                if (RSide && LSide)
-                                {
-                                    switch (RDM.Next(0, 2))
-                                    {
-                                        case 0:
-                                            Particles[i].VX += 0.1f;
-                                            break;
-                                        case 1:
-                                            Particles[i].VX -= 0.1f;
-                                            break;
-                                    }
-                                }
+                                if (Current.Bouncy)
+                                    Particles[i].VY = -Particles[i].VY * 1 / (1 + Current.Drag);
                                 else
-                                {
-                                    if (RSide)
-                                    {
-                                        Particles[i].VX += 0.1f;
-                                    }
+                                    Particles[i].VY = Particles[Neighbors[1]].VY;
 
-                                    if (LSide)
-                                    {
-                                        Particles[i].VX -= 0.1f;
-                                    }
-                                }
+                                Particles[i].PY = Particles[Neighbors[1]].PY - 1;
                             }
                         }
 
@@ -284,41 +410,12 @@ namespace Sandular
                             //Force Transferral
                             if (Particles[i].VX > 0 && Particles[Neighbors[3]].VX < Particles[i].VX)
                             {
-                                bool USide = false;
-                                bool DSide = false;
-
-                                //UP slide check
-                                if (Neighbors[5] == -1)
-                                    USide = true;
-
-                                //DOWN slide check
-                                if (Neighbors[7] == -1)
-                                    DSide = true;
-
-                                if (DSide && USide)
-                                {
-                                    switch (RDM.Next(0, 2))
-                                    {
-                                        case 0:
-                                            Particles[i].VY += 0.1f;
-                                            break;
-                                        case 1:
-                                            Particles[i].VY -= 0.1f;
-                                            break;
-                                    }
-                                }
+                                if (Current.Bouncy)
+                                    Particles[i].VX = -Particles[i].VX * 1 / (1 + Current.Drag);
                                 else
-                                {
-                                    if (DSide)
-                                    {
-                                        Particles[i].VY += 0.1f;
-                                    }
+                                    Particles[i].VX = Particles[Neighbors[3]].VX;
 
-                                    if (USide)
-                                    {
-                                        Particles[i].VY -= 0.1f;
-                                    }
-                                }
+                                Particles[i].PX = Particles[Neighbors[3]].PX - 1;
                             }
                         }
 
@@ -328,83 +425,17 @@ namespace Sandular
                             //Force Transferral
                             if (Particles[i].VX < 0 && Particles[Neighbors[2]].VX > Particles[i].VX)
                             {
-                                bool USide = false;
-                                bool DSide = false;
-
-                                //UP slide check
-                                if (Neighbors[4] == -1)
-                                    USide = true;
-
-                                //DOWN slide check
-                                if (Neighbors[6] == -1)
-                                    DSide = true;
-
-                                if (DSide && USide)
-                                {
-                                    switch (RDM.Next(0, 2))
-                                    {
-                                        case 0:
-                                            Particles[i].VY += 0.1f;
-                                            break;
-                                        case 1:
-                                            Particles[i].VY -= 0.1f;
-                                            break;
-                                    }
-                                }
+                                if (Current.Bouncy)
+                                    Particles[i].VX = -Particles[i].VX * 1 / (1 + Current.Drag);
                                 else
-                                {
-                                    if (DSide)
-                                    {
-                                        Particles[i].VY += 0.1f;
-                                    }
+                                    Particles[i].VX = Particles[Neighbors[2]].VX;
 
-                                    if (USide)
-                                    {
-                                        Particles[i].VY -= 0.1f;
-                                    }
-                                }
+                                Particles[i].PX = Particles[Neighbors[2]].PX + 1;
                             }
                         }
 
-                        //UP neighbor
-                        if (Neighbors[0] != -1)
-                        {
-                            //Force Transferral
-                            if (Particles[i].VY < 0 && Particles[Neighbors[0]].VY > Particles[i].VY)
-                            {
-                                Particles[i].VY = Particles[Neighbors[0]].VY;
-                            }
-                        }
-
-                        //DOWN neighbor
-                        if (Neighbors[1] != -1)
-                        {
-                            //Force Transferral
-                            if (Particles[i].VY > 0 && Particles[Neighbors[1]].VY < Particles[i].VY)
-                            {
-                                Particles[i].VY = Particles[Neighbors[1]].VY;
-                            }
-                        }
-
-                        //RIGHT neighbor
-                        if (Neighbors[3] != -1)
-                        {
-                            //Force Transferral
-                            if (Particles[i].VX > 0 && Particles[Neighbors[3]].VX < Particles[i].VX)
-                            {
-                                Particles[i].VX = Particles[Neighbors[3]].VX;
-                            }
-                        }
-
-                        //LEFT neighbor
-                        if (Neighbors[2] != -1)
-                        {
-                            //Force Transferral
-                            if (Particles[i].VX < 0 && Particles[Neighbors[2]].VX > Particles[i].VX)
-                            {
-                                Particles[i].VX = Particles[Neighbors[2]].VX;
-                            }
-                        }
+                        //Particles[i].VX = (float)Math.Round(Particles[i].VX * 2, MidpointRounding.AwayFromZero) / 2;
+                        //Particles[i].VY = (float)Math.Round(Particles[i].VY * 2, MidpointRounding.AwayFromZero) / 2;
 
                         if (Particles[i].VX > 0.99f)
                             Particles[i].VX = 0.99f;
@@ -489,7 +520,7 @@ namespace Sandular
 
         public static void AssertParticle(int i)
         {
-            Vector2u CurrentPoint = GetGridPoint(Particles[i].PX, Particles[i].PY);
+            Vector2u CurrentPoint = GetGridPoint((uint)Particles[i].PX, (uint)Particles[i].PY);
             Vector2u ParticlePos = new Vector2u((uint)Particles[i].PX, (uint)Particles[i].PY);
             if (!GridPoints.ContainsKey(CurrentPoint))
             {
@@ -505,15 +536,16 @@ namespace Sandular
                     if (!Current.Particles.ContainsKey(ParticlePos))
                     {
                         Current.Particles.Add(ParticlePos,(uint)i);
+                        //Particles[i].ColVar = (byte)(CurrentPoint.X + CurrentPoint.Y);
                     }
                 }
             }
         }
 
-        public static Vector2u GetGridPoint(float X, float Y)
+        public static Vector2u GetGridPoint(uint X, uint Y)
         {
-            uint NewX = (uint)Math.Round(X / GridSize) * GridSize;
-            uint NewY = (uint)Math.Round(Y / GridSize) * GridSize;
+            uint NewX = (X - X % GridSize);
+            uint NewY = (Y - Y % GridSize);
             return new Vector2u(NewX, NewY);
         }
 
@@ -523,7 +555,7 @@ namespace Sandular
             if (PTCLE != -1)
             {
                 GridPoint GP;
-                if (GridPoints.TryGetValue(GetGridPoint(Particles[PTCLE].PX, Particles[PTCLE].PY), out GP))
+                if (GridPoints.TryGetValue(GetGridPoint((uint)Particles[PTCLE].PX, (uint)Particles[PTCLE].PY), out GP))
                 {
                     Vector2u PPos = new Vector2u((uint)Particles[PTCLE].PX, (uint)Particles[PTCLE].PY);
                     uint Particle;

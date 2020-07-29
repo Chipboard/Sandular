@@ -2,6 +2,7 @@
 using SFML.System;
 using SFML.Window;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Sandular
 {
@@ -92,6 +93,8 @@ namespace Sandular
             Renderer.GridDraw.Origin = new Vector2f(Rect.Width / 2, Rect.Height / 2);
 
             Renderer.CursorColor = new Color(255, 255, 255, 150);
+
+            //Solver.GravityPoint = (Vector2f)(Resolution / 2);
         }
 
         static void InitializeWindow()
