@@ -12,6 +12,7 @@ namespace Sandular
         public static int Type = 0;
         public static float RangeX = 5;
         public static float RangeY = 5;
+        private static int LastScroll;
 
         public static Dictionary<Keyboard.Key, bool> KeyValues = new Dictionary<Keyboard.Key, bool>();
 
@@ -21,10 +22,10 @@ namespace Sandular
 
             if (Mouse.IsButtonPressed(Mouse.Button.Left))
             {
-                int MinX = (int)InputHandler.MousePosition.X - (int)InputHandler.RangeX + 1;
-                int MinY = (int)InputHandler.MousePosition.Y - (int)InputHandler.RangeY + 1;
-                int MaxX = (int)InputHandler.MousePosition.X + (int)InputHandler.RangeX;
-                int MaxY = (int)InputHandler.MousePosition.Y + (int)InputHandler.RangeY;
+                int MinX = (int)MousePosition.X - (int)RangeX + 1;
+                int MinY = (int)MousePosition.Y - (int)RangeY + 1;
+                int MaxX = (int)MousePosition.X + (int)RangeX;
+                int MaxY = (int)MousePosition.Y + (int)RangeY;
 
                 for (int CX = MinX; CX < MaxX; CX++)
                 {
@@ -133,9 +134,11 @@ namespace Sandular
         {
             MouseWheelEventArgs MouseEvent = (MouseWheelEventArgs)e;
 
+            int ScrollAmount = LastScroll - MouseEvent.Delta;
+
             if (Keyboard.IsKeyPressed(Keyboard.Key.LControl))
             {
-                if (MouseEvent.Delta > 0)
+                if (ScrollAmount > 0)
                     RangeX += 0.001f;
                 else
                     RangeX -= 0.001f;
@@ -152,7 +155,7 @@ namespace Sandular
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.LShift))
             {
-                if(MouseEvent.Delta>0)
+                if(ScrollAmount > 0)
                     RangeY += 0.001f;
                 else
                     RangeY -= 0.001f;
@@ -166,7 +169,11 @@ namespace Sandular
                 return;
             }
 
-            Type += MouseEvent.Delta;
+            if (ScrollAmount > 0)
+                Type++;
+            else
+                Type--;
+
             if (Type > Resources.PowderTypes.Count - 1)
             {
                 Type = 0;
@@ -175,6 +182,8 @@ namespace Sandular
             {
                 Type = Resources.PowderTypes.Count - 1;
             }
+
+            LastScroll = ScrollAmount;
         }
     }
 }

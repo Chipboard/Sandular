@@ -28,7 +28,7 @@ namespace Sandular
                 Pours = false
             });
 
-            PowderTypes.Add(new PowderType()
+            /*PowderTypes.Add(new PowderType()
             {
                 Name = "Bouncy",
                 Color = new Color(200, 45, 200, 255),
@@ -37,7 +37,7 @@ namespace Sandular
                 MaxColVar = 5,
                 Pours = true,
                 Bouncy = true
-            });
+            });*/
 
             /*PowderTypes.Add(new PowderType()
             {

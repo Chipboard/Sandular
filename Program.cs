@@ -32,16 +32,6 @@ namespace Sandular
                     //Dispatch the events before checking them
                     ProgramWindow.DispatchEvents();
 
-                    //Dispatch event to OnClose() function when window close is pressed
-                    ProgramWindow.Closed += (sender, e) => { OnClose(); };
-
-                    //Send scroll wheel to input handler
-                    ProgramWindow.MouseWheelMoved += (sender, e) => { InputHandler.OnMouseScroll(sender, e); };
-
-                    //Send keyboard input to input handler
-                    ProgramWindow.KeyPressed += (sender, e) => { InputHandler.OnKeyPressed(sender, e); };
-                    ProgramWindow.KeyReleased += (sender, e) => { InputHandler.OnKeyReleased(sender, e); };
-
                     //Get the input
                     InputHandler.Tick();
 
@@ -106,6 +96,16 @@ namespace Sandular
             //ProgramWindow.SetVerticalSyncEnabled(true);
             ProgramWindow.SetFramerateLimit(120);
             ProgramWindow.SetKeyRepeatEnabled(false);
+			
+			                    //Dispatch event to OnClose() function when window close is pressed
+                    ProgramWindow.Closed += (sender, e) => { OnClose(); };
+
+                    //Send scroll wheel to input handler
+                    ProgramWindow.MouseWheelMoved += (sender, e) => { InputHandler.OnMouseScroll(sender, e); };
+
+                    //Send keyboard input to input handler
+                    ProgramWindow.KeyPressed += (sender, e) => { InputHandler.OnKeyPressed(sender, e); };
+                    ProgramWindow.KeyReleased += (sender, e) => { InputHandler.OnKeyReleased(sender, e); };
         }
 
         static void SetBackground()
